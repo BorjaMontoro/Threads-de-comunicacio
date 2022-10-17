@@ -3,8 +3,14 @@ package com.example.threadsdecomunicacio;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.util.Log;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.ListView;
+import android.widget.TextView;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -13,28 +19,51 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.ArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import javax.net.ssl.HttpsURLConnection;
 
 public class MainActivity extends AppCompatActivity {
+    ArrayList<String> lista;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        Button b = (Button) findViewById(R.id.button);
+        lista = new ArrayList<>();
+        lista.add("Buenas");
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1,lista);
+        ListView listview = findViewById(R.id.listView);
+        listview.setAdapter(adapter);
+        TextView resultado = findViewById(R.id.resultado);
+        Button b = findViewById(R.id.enviar);
         b.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View view) {
-                getDataFromUrl("https://api.myip.com/");
+            public void onClick(View v) {
+                ExecutorService executor = Executors.newSingleThreadExecutor();
+                Handler handler = new Handler(Looper.getMainLooper());
+                executor.execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        String res = getDataFromUrl("https://api.myip.com");
+                        Log.i("INFO:", res);
+                        handler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                resultado.append(res);
+                                lista.add(res);
+                                adapter.notifyDataSetChanged();
+
+                            }
+                        });
+                    }
+                });
             }
-
-
         });
-
     }
-    String error = ""; // string field
+    String error = "";
     private String getDataFromUrl(String demoIdUrl) {
 
         String result = null;
